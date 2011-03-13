@@ -15,6 +15,7 @@ class sms_user_handler_filter_status extends views_handler_filter_in_operator {
       $this->value_options = array(
         SMS_USER_PENDING    => t('Pending'),
         SMS_USER_CONFIRMED  => t('Confirmed'),
+        SMS_USER_ACTIVE  => t('Confirmed and Active'),
       );
     }
   }

@@ -16,6 +16,7 @@ class sms_user_handler_field_status extends views_handler_field {
     $status_defined = array(
       SMS_USER_PENDING    => t('Pending'),
       SMS_USER_CONFIRMED  => t('Confirmed'),
+      SMS_USER_ACTIVE  => t('Confirmed and Active'),
     );
     return $status_defined[$status];
   }
