@@ -154,9 +154,52 @@ function sms_user_send_confirmation($account, $number, $options) {
     'code'    => $code,
     'gateway' => $options,
   );
-
   user_save($account, array('sms_user' => $data), 'mobile');
   sms_send($number, _sms_user_confirm_message($code), $options);
+}
+
+/**
+ * Confirm a number with confirmation code.
+ *
+ * @param $account
+ *   user object.
+ * @param $number
+ *   number to confirm.
+ * @param $code
+ *   confirmation code.
+ * @param
+ *   bool TRUE if only validating and not confirming.
+ * @return
+ *   bool TRUE if code correct for number.
+ */
+function sms_user_confirm($account, $number, $code, $validate = FALSE) {
+  foreach ($account->sms_user as $acc_number) {
+    if ($acc_number['number'] == $number) {
+      if ($acc_number['code'] != $code) {
+        // incorrect code.
+        return FALSE;
+      }
+      if (! $validate) {
+        $data = array(
+          'number'  => $number,
+          'status'  => isset($account->sms_user[1]) ? SMS_USER_CONFIRMED : SMS_USER_ACTIVE,
+          'gateway' => $acc_number['gateway'],
+        );
+
+        user_save($account, array('sms_user' => $data), 'mobile');
+        // If the rule module is installed, fire rules
+        if (module_exists('rules')) {
+          rules_invoke_event('sms_user_validated', $account);
+        }
+      }
+      
+      // correct code for number.
+      return TRUE;
+    }
+  }
+
+  // incorrect number.
+  return FALSE;
 }
 
 function sms_user_validate_number(&$number) {
@@ -266,8 +309,9 @@ function sms_user_save(&$edit, &$account, $category) {
     $number['gateway'] = serialize($number['gateway']);
     $number['uid'] = $account->uid;
 
-    if (! drupal_write_record('sms_user', $number, array('number', 'uid'))) {
-      drupal_write_record('sms_user', $number);
+    drupal_write_record('sms_user', $number, array('number', 'uid'));
+    if (! db_affected_rows()) {
+      $result = drupal_write_record('sms_user', $number);
     }
 
     // @todo: ---
@@ -275,6 +319,7 @@ function sms_user_save(&$edit, &$account, $category) {
     $edit['sms_user']['status'] = NULL;
     $edit['sms_user']['code'] = NULL;
     $edit['sms_user']['gateway'] = NULL;
+    $edit['sms_user']['uid'] = NULL;
   }
 }
 

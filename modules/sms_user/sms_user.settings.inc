@@ -24,7 +24,7 @@ function sms_user_settings_form(&$form_state, $account) {
         // part of the active account
         continue;
       }
-      if ($number['status'] = SMS_USER_PENDING) {
+      if ($number['status'] == SMS_USER_PENDING) {
         $form['pending'][] = sms_user_settings_confirm_form($form_state, $account, $number);
       }
       else {
@@ -62,19 +62,24 @@ function sms_user_settings_form(&$form_state, $account) {
 }
 
 function sms_user_settings_form_validate(&$form, &$form_state) {
-  dsm($form_state);
-  switch ($form_state['op']) {
+  switch ($form_state['clicked_button']['#value']) {
     case t('Add number'): 
       sms_user_settings_add_form_validate($form, $form_state);
+      break;
+    case t('Confirm'):
+      sms_user_settings_confirm_form_validate($form, $form_state);
+      break;
   }
 }
 
 function sms_user_settings_form_submit($form, &$form_state) {
-  $account = user_load(array('uid' => $form_state['storage']['uid']));
-
-  switch ($form_state['op']) {
+  switch ($form_state['values']['op']) {
     case t('Add number'): 
-      sms_user_settings_add_form_submit($form, $form_state, $account);
+      sms_user_settings_add_form_submit($form, $form_state);
+      break;
+    case t('Confirm'):
+      sms_user_settings_confirm_form_submit($form, $form_state);
+      break;
   }
 }
 
@@ -87,7 +92,7 @@ function sms_user_settings_form_submit($form, &$form_state) {
 function sms_user_settings_add_form(&$form_state, $account) {
   $form_state['storage']['uid'] = $account->uid;   
   $form = sms_send_form();
-  $form['submit'] = array(
+  $form['add_submit'] = array(
     '#type' => 'submit',
     '#value' => t('Add number'),
   );
@@ -104,10 +109,8 @@ function sms_user_settings_add_form_validate($form, &$form_state) {
   }
 }
 
-function sms_user_settings_add_form_submit($form, &$form_state, $account = NULL) {
-  if (!$account) {
-    $account = user_load(array('uid' => $form_state['storage']['uid']));
-  }
+function sms_user_settings_add_form_submit($form, &$form_state) {
+  $account = user_load(array('uid' => $form_state['storage']['uid']));
   sms_user_send_confirmation($account, $form_state['values']['number'], $form_state['values']['gateway']);
 }
 
@@ -120,52 +123,52 @@ function sms_user_settings_add_form_submit($form, &$form_state, $account = NULL)
  *   Number array (@todo or delta?)
  */
 function sms_user_settings_confirm_form(&$form_state, $account, $number) {
-  $form_state['storage']['uid'] = $account->uid;   
+  $form_state['storage']['uid'] = $account->uid;
+  // @todo check $number['number'] does it not have to be safe..
+  $number['safe'] = check_plain($number['number']);
+
   $form['confirm_number'] = array(
     '#type' => 'item',
     '#title' => t('Mobile phone number'),
-    '#value' => check_plain($number['number']),
+    '#value' => check_plain($number['safe']),
   );
-  $form['confirm_code['. $number['delta'] .']'] = array(
+  $form['confirm_code[' . $number['safe'] .']'] = array(
     '#type' => 'textfield',
     '#title' => t('Confirmation code'),
     '#description' => t('The code sent by SMS to your mobile phone.'),
     '#size' => 4,
     '#maxlength' => 4,
   );
+  $form['confirm_submit[' . $number['safe'] . ']'] = array(
+    '#type' => 'submit',
+    '#value' => t('Confirm'),
+  );
   $form['confirm_delete'] = array(
     '#type' => 'item',
-    '#value' => l('Delete', '/user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['delta'] . '/delete'),
+    '#value' => l('Delete', '/user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete'),
     '#access' => user_access('edit own sms number'),
   );
   return $form;
 }
 
 function sms_user_settings_confirm_form_validate($form, &$form_state) {
-  // @todo is this by number... $account->sms_user[number]
   $account = user_load(array('uid' => $form_state['storage']['uid']));
-  if ($form_state['values']['confirm_code'] != $account->sms_user['code']) {
-    form_set_error('confirm_code', t('The confirmation code is invalid.'));
+  foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
+    if (! empty($code) && ! sms_user_confirm($account, $number, $code, TRUE)) {
+      form_set_error('confirm_code', t('The confirmation code for number %number is invalid.', array('%number' => $number)));
+    }
   }
 }
 
 function sms_user_settings_confirm_form_submit($form, &$form_state) {
   $account = user_load(array('uid' => $form_state['storage']['uid']));
-  // @todo make a confirm number function?
   // @todo move the sms_user_delete($account->uid);
-  // @todo this is by number
-  $data = array(
-    'number'  => $account->sms_user['number'],
-    'status'  => isset($account->sms_user[1]) ? SMS_USER_CONFIRMED : SMS_USER_ACTIVE;
-    'gateway' => $account->sms_user['gateway'],
-  );
-
-  user_save($account, array('sms_user' => $data), 'mobile');
-  // If the rule module is installed, fire rules
-  if (module_exists('rules')) {
-    rules_invoke_event('sms_user_validated', $account);
-  }
-} 
+ foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
+   if (! empty($code)) {
+     sms_user_confirm($account, $number, $code);
+   }
+ }
+}
 
 /**
  * Form:
@@ -175,13 +178,12 @@ function sms_user_settings_reset_form(&$form_state, $account, $number) {
   $form['sms_user']['number'] = array(
     '#type' => 'item',
     '#title' => t('Your mobile phone number'),
-    '#value' => $account->sms_user['number'],
+    '#value' => $number['number'],
     '#description' => t('Your mobile phone number has been confirmed.')
   );
-
-  $form['reset'] = array(
-    '#type' => 'submit',
-    '#value' => t('Delete & start over'),
+  $form['confirm_delete'] = array(
+    '#type' => 'item',
+    '#value' => l('Delete', '/user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete'),
     '#access' => user_access('edit own sms number'),
   );
 
