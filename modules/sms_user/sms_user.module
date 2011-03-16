@@ -60,6 +60,16 @@ function sms_user_menu() {
     'file' => 'sms_user.settings.inc',
   );
 
+  $items['user/%user/edit/mobile/%/delete'] = array(
+    'title' => 'Delete mobile number',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sms_user_settings_delete_form', 1, 4),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'sms_user_delete_access',
+    'access arguments' => array(1, 4),
+    'file' => 'sms_user.settings.inc',
+  );
+
   return $items;
 }
 
@@ -68,6 +78,18 @@ function sms_user_menu() {
  */
 function sms_user_edit_access($account) {
   return (user_edit_access($account) && user_access('receive sms', $account));
+}
+
+/**
+ * Access control on delete users sms number.
+ */
+function sms_user_delete_access($account, $number) {
+  if (sms_user_edit_access($account)) {
+    if ($account->uid == sms_user_get_uid($number)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 /**

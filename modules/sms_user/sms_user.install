@@ -13,6 +13,7 @@ function sms_user_install() {
 function sms_user_schema() {
   $schema['sms_user'] = array(
     'fields' => array(
+      'sid'       => array('description' => 'SMS number id', 'type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, ),
       'uid'       => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
       'number'    => array('type' => 'varchar', 'not null' => TRUE, 'length' => 32),
       'status'    => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
@@ -20,11 +21,18 @@ function sms_user_schema() {
       'gateway'   => array('type' => 'text'),
     ),
     'primary key' => array('number'),
-    'indexes' => array('uid' => array('uid')),
+    'indexes' => array('uid' => array('uid'), 'sid' => array('sid')),
   );
 
   return $schema;
 }
+
+function sms_user_update_2() {
+  $ret = array();
+  db_add_field($ret, 'sms_user', 'sid', array('description' => 'SMS number id', 'type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE), array('indexes' => array('sid' => array('sid'))));
+  return $ret;
+}
+
 
 /**
  * Implementation of hook_update().

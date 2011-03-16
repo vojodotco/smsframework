@@ -124,28 +124,26 @@ function sms_user_settings_add_form_submit($form, &$form_state) {
  */
 function sms_user_settings_confirm_form(&$form_state, $account, $number) {
   $form_state['storage']['uid'] = $account->uid;
-  // @todo check $number['number'] does it not have to be safe..
-  $number['safe'] = check_plain($number['number']);
 
   $form['confirm_number'] = array(
     '#type' => 'item',
     '#title' => t('Mobile phone number'),
-    '#value' => check_plain($number['safe']),
+    '#value' => $number['number'],
   );
-  $form['confirm_code[' . $number['safe'] .']'] = array(
+  $form['confirm_code[' . $number['number'] .']'] = array(
     '#type' => 'textfield',
     '#title' => t('Confirmation code'),
     '#description' => t('The code sent by SMS to your mobile phone.'),
     '#size' => 4,
     '#maxlength' => 4,
   );
-  $form['confirm_submit[' . $number['safe'] . ']'] = array(
+  $form['confirm_submit[' . $number['number'] . ']'] = array(
     '#type' => 'submit',
     '#value' => t('Confirm'),
   );
   $form['confirm_delete'] = array(
     '#type' => 'item',
-    '#value' => l('Delete', '/user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete'),
+    '#value' => l('Delete', 'user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
     '#access' => user_access('edit own sms number'),
   );
   return $form;
@@ -162,8 +160,7 @@ function sms_user_settings_confirm_form_validate($form, &$form_state) {
 
 function sms_user_settings_confirm_form_submit($form, &$form_state) {
   $account = user_load(array('uid' => $form_state['storage']['uid']));
-  // @todo move the sms_user_delete($account->uid);
- foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
+  foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
    if (! empty($code)) {
      sms_user_confirm($account, $number, $code);
    }
@@ -171,7 +168,7 @@ function sms_user_settings_confirm_form_submit($form, &$form_state) {
 }
 
 /**
- * Form:
+ * Form: Lists a confirmed number.
  */
 function sms_user_settings_reset_form(&$form_state, $account, $number) {
   $form_state['storage']['uid'] = $account->uid;   
@@ -183,7 +180,7 @@ function sms_user_settings_reset_form(&$form_state, $account, $number) {
   );
   $form['confirm_delete'] = array(
     '#type' => 'item',
-    '#value' => l('Delete', '/user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete'),
+    '#value' => l('Delete', 'user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
     '#access' => user_access('edit own sms number'),
   );
 
@@ -197,6 +194,27 @@ function sms_user_settings_reset_form_submit($form, &$form_state) {
     rules_invoke_event('sms_user_removed', $account);
   }
   drupal_set_message(t('Your mobile information has been removed'), 'status');
+}
+
+/**
+ * Form: Delete number from account.
+ */
+function sms_user_settings_delete_form(&$form_state, $account, $number) {
+  $form_state['storage']['uid'] = $account->uid;
+  $form_state['storage']['number'] = $number;
+
+  $form = array();
+  $form['text'] = array('#value' => t('Are you sure you want to delete %number?', array('%number' => $number)));
+  $form['confirm'] = array('#type' => 'submit', '#value' => t('Delete'));
+  $form['cancel'] = array('#type' => 'submit', '#value' => t('Cancel'));
+  return $form;
+}
+
+function sms_user_settings_delete_form_submit($form, &$form_state) {
+  if ($form_state['clicked_button']['#value'] == t('Delete')) {
+    sms_user_delete($form_state['storage']['uid'], $form_state['storage']['number']);
+  }
+  drupal_goto();
 }
 
 /**
