@@ -29,7 +29,7 @@ function sms_user_schema() {
 
 function sms_user_update_2() {
   $ret = array();
-  db_add_field($ret, 'sms_user', 'sid', array('description' => 'SMS number id', 'type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE), array('indexes' => array('sid' => array('sid'))));
+  // @todo update all SMS_USER_CONFIRMED 2 status to SMS_USER_ACTIVE 3
   return $ret;
 }
 

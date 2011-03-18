@@ -41,8 +41,8 @@ function sms_user_menu() {
 
   $items['user/%user/edit/mobile'] = array(
     'title' => 'Mobile',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('sms_user_settings_form', 1),
+    'page callback' => 'sms_user_settings_page',
+    'page arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
     'access callback' => 'sms_user_edit_access',
     'access arguments' => array(1),
@@ -71,6 +71,18 @@ function sms_user_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function sms_user_theme() {
+  return array(
+    'sms_user_settings_active_form' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'sms_user.settings.inc',
+    ),
+  );
 }
 
 /**
@@ -239,7 +251,7 @@ function sms_user_validate_number(&$number) {
 function sms_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'load':
-      return sms_user_load($edit, $account, $category);
+      return sms_user_load($account, $category);
     case 'update':
     case 'insert':
       return sms_user_save($edit, $account, $category);
@@ -294,7 +306,8 @@ function sms_user_user($op, &$edit, &$account, $category = NULL) {
  *
  * @see sms_user_user()
  */
-function sms_user_load(&$edit, &$account, $category) {
+function sms_user_load(&$account, $category) {
+  // this is called often.
   $result = db_query("SELECT number, status, code, gateway FROM {sms_user} WHERE uid = %d", $account->uid);
 
   $account->sms_user = array();
@@ -366,6 +379,21 @@ function sms_user_delete($uid, $number = FALSE) {
     $db_args[] = $number;
   }
   db_query("DELETE FROM {sms_user} WHERE uid = %d $number_where", $db_args);
+}
+
+/**
+ * Set active number.
+ *
+ * For sms_user_multiple_numbers.
+ *
+ * @param $uid
+ *   User id.
+ * @param $number
+ *   Mobile number to set as default.
+ */
+function sms_user_active_set($uid, $number) {
+  db_query('UPDATE {sms_user} SET status = %d WHERE uid = %d AND status = %d', SMS_USER_CONFIRMED, $uid, SMS_USER_ACTIVE);
+  db_query("UPDATE {sms_user} SET status = %d WHERE uid = %d AND number = '%s'", SMS_USER_ACTIVE, $uid, $number);
 }
 
 /**
@@ -643,6 +671,37 @@ function sms_user_logout() {
   // Destroy the current session:
   session_destroy();
   $user = drupal_anonymous_user();
+}
+
+/**
+ * Helper function returns numbers array indexed by status, or number.
+ *
+ * @param $account
+ *   User object.
+ * @param $index.
+ *   string key to use to index.
+ * @return 
+ *   array numbers indexed by key value.
+ */
+function sms_user_numbers($account, $index) {
+  static $numbers = array();
+
+  if (! isset($numbers[$account->uid][$index])) {
+    foreach ($account->sms_user as $key => $number) {
+      // skip the active number elements that are included as $sms_user['key'];
+      if (! is_numeric($key) || ! is_array($number)) {
+        continue;
+      }
+      if ($index == 'number') {
+        $numbers[$account->uid][$index][$number[$index]] = $number;
+      }
+      else {
+        $numbers[$account->uid][$index][$number[$index]][] = $number;
+      }
+    }
+  }
+
+  return $numbers[$account->uid][$index];
 }
 
 /**
