@@ -51,7 +51,6 @@ function sms_user_settings_page($account) {
  *   Bool TRUE if form should be in fieldset.
  */
 function sms_user_settings_add_form(&$form_state, $account) {
-  dsm('sms_user_settings_add_form');
   // refresh the numbers, one can just be added, no form if number and not multiple
   $numbers = sms_user_numbers($account, 'numbers', TRUE);
   if (count($numbers) && ! variable_get('sms_user_multiple_numbers', FALSE)) {
@@ -78,7 +77,6 @@ function sms_user_settings_add_form(&$form_state, $account) {
 }
 
 function sms_user_settings_add_form_validate($form, &$form_state) {
-  dsm('sms_user_settings_add_form_validate');
   if ($error = sms_user_validate_number($form_state['values']['number'])) {
     form_set_error('number', $error);
   }
@@ -89,7 +87,6 @@ function sms_user_settings_add_form_validate($form, &$form_state) {
 }
 
 function sms_user_settings_add_form_submit($form, &$form_state) {
-  dsm('sms_user_settings_add_form_submit');
   $account = user_load(array('uid' => $form_state['storage']['uid']));
   sms_user_send_confirmation($account, $form_state['values']['number'], $form_state['values']['gateway']);
 }
@@ -103,7 +100,6 @@ function sms_user_settings_add_form_submit($form, &$form_state) {
  *   Number array (@todo or delta?)
  */
 function sms_user_settings_confirm_form(&$form_state, $account, $number) {
-  dsm('sms_user_settings_confirm_form');
   // get and reset numbers list, return if none pending confirmation.
   $numbers = sms_user_numbers($account, 'status', TRUE);
   if (! count($numbers[SMS_USER_PENDING])) {
@@ -142,8 +138,6 @@ function sms_user_settings_confirm_form(&$form_state, $account, $number) {
 }
 
 function sms_user_settings_confirm_form_validate($form, &$form_state) {
-  dsm('sms_user_settings_confirm_form_validate');
-  dsm($form_state);
   $account = user_load(array('uid' => $form_state['storage']['uid']));
   $filled = FALSE;
   foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
@@ -161,7 +155,6 @@ function sms_user_settings_confirm_form_validate($form, &$form_state) {
 }
 
 function sms_user_settings_confirm_form_submit($form, &$form_state) {
-  dsm('sms_user_settings_confirm_form_submit');
   $account = user_load(array('uid' => $form_state['storage']['uid']));
   foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
    if (! empty($code)) {
@@ -174,7 +167,6 @@ function sms_user_settings_confirm_form_submit($form, &$form_state) {
  * Form: Lists confirmed number(s). For multiples allows setting active number.
  */
 function sms_user_settings_active_form(&$form_state, $account) {
-  dsm('sms_user_settings_active_form');
   $form_state['storage']['uid'] = $account->uid;
   $form = array();
 
@@ -227,7 +219,6 @@ function sms_user_settings_active_form(&$form_state, $account) {
 }
 
 function sms_user_settings_active_form_submit($form, &$form_state) {
-  dsm('sms_user_settings_active_form_submit');
   sms_user_active_set($form_state['storage']['uid'], $form_state['values']['active']);
 }
 
@@ -264,7 +255,6 @@ function sms_user_settings_delete_form_submit($form, &$form_state) {
  *   Bool TRUE if should be in a fieldset.
  */
 function sms_user_settings_sleep_form(&$form_state, $account, $fieldset = FALSE) {
-  dsm('sms_user_settings_sleep_form');
   $form_state['storage']['uid'] = $account->uid;
 
   $form['sleep']['sleep_enabled'] = array(
@@ -318,7 +308,6 @@ function sms_user_settings_sleep_form(&$form_state, $account, $fieldset = FALSE)
 }
 
 function sms_user_settings_sleep_form_submit($form, &$form_state) {
-  dsm('sms_user_settings_sleep_form_submit');
   $account = user_load(array('uid' => $form_state['storage']['uid']));
   $data = $account->sms_user;
   $data['sleep_enabled'] = $form_state['values']['sleep_enabled'];
