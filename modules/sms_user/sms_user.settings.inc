@@ -5,6 +5,8 @@
  *   SMS Framework user module. User settings, add, remove, verify numbers.
  */
 
+variable_set('sms_user_multiple_numbers', TRUE);
+
 /**
  * Form: User numbers overview.
  *
@@ -12,59 +14,32 @@
  *   User object.
  */
 function sms_user_settings_page($account) {
-  $content = '';
+  $content = array();
 
   /**
-   * Mobile numbers.
+   * First add a number (and check if a number has been added).
    */
-  if (isset($account->sms_user)) {
-    $numbers = sms_user_numbers($account, 'status');
-    $content .= drupal_get_form('sms_user_settings_active_form', $account);
-    foreach ($numbers[SMS_USER_PENDING] as $key => $number) {
-      $content .= drupal_get_form('sms_user_settings_confirm_form', $account, $number);
-    }
-  }
+  $content['add'] = drupal_get_form('sms_user_settings_add_form', $account);
+  
 
   /**
-   * Add a number.
+   * Check for any validations done or todo.
    */
-  if (! isset($account->sms_user)) {
-    $content .= drupal_get_form('sms_user_settings_add_form', $account);
-  }
-  elseif (variable_get('sms_user_multiple_numbers', TRUE)) {
-    $content .= drupal_get_form('sms_user_settings_add_form', $account, TRUE);
-  }
-   
+  $content['validate'] = drupal_get_form('sms_user_settings_confirm_form', $account, $number);
+
+  /**
+   * List active numbers,
+   */
+  $content['active'] = drupal_get_form('sms_user_settings_active_form', $account);
+
   /**
    * Sleep.
    */
   if (variable_get('sms_user_sleep', 1)) {
-    $content .= drupal_get_form('sms_user_settings_sleep_form', $account, TRUE);
+    $content['sleep'] = drupal_get_form('sms_user_settings_sleep_form', $account, TRUE);
   }
   
-  return $content;
-}
-
-function sms_user_settings_form_validate(&$form, &$form_state) {
-  switch ($form_state['clicked_button']['#value']) {
-    case t('Add number'): 
-      sms_user_settings_add_form_validate($form, $form_state);
-      break;
-    case t('Confirm'):
-      sms_user_settings_confirm_form_validate($form, $form_state);
-      break;
-  }
-}
-
-function sms_user_settings_form_submit($form, &$form_state) {
-  switch ($form_state['values']['op']) {
-    case t('Add number'): 
-      sms_user_settings_add_form_submit($form, $form_state);
-      break;
-    case t('Confirm'):
-      sms_user_settings_confirm_form_submit($form, $form_state);
-      break;
-  }
+  return theme('sms_user_settings_page', $content);
 }
 
 /**
@@ -75,15 +50,25 @@ function sms_user_settings_form_submit($form, &$form_state) {
  * @param $fieldset
  *   Bool TRUE if form should be in fieldset.
  */
-function sms_user_settings_add_form(&$form_state, $account, $fieldset = FALSE) {
+function sms_user_settings_add_form(&$form_state, $account) {
+  dsm('sms_user_settings_add_form');
+  // refresh the numbers, one can just be added, no form if number and not multiple
+  $numbers = sms_user_numbers($account, 'numbers', TRUE);
+  if (count($numbers) && ! variable_get('sms_user_multiple_numbers', FALSE)) {
+    return;
+  }
+
   $form_state['storage']['uid'] = $account->uid;
+
   $form = array();
   $form['add'] = sms_send_form();
   $form['add']['add_submit'] = array(
     '#type' => 'submit',
     '#value' => t('Add number'),
   );
-  if ($fieldset) {
+
+  // place in a fieldset if there is more than one number 
+  if (count($numbers)) {
     $form['add']['#type'] = 'fieldset';
     $form['add']['#title'] = t('Add another number');
     $form['add']['#collapsible'] = TRUE;
@@ -93,6 +78,7 @@ function sms_user_settings_add_form(&$form_state, $account, $fieldset = FALSE) {
 }
 
 function sms_user_settings_add_form_validate($form, &$form_state) {
+  dsm('sms_user_settings_add_form_validate');
   if ($error = sms_user_validate_number($form_state['values']['number'])) {
     form_set_error('number', $error);
   }
@@ -103,6 +89,7 @@ function sms_user_settings_add_form_validate($form, &$form_state) {
 }
 
 function sms_user_settings_add_form_submit($form, &$form_state) {
+  dsm('sms_user_settings_add_form_submit');
   $account = user_load(array('uid' => $form_state['storage']['uid']));
   sms_user_send_confirmation($account, $form_state['values']['number'], $form_state['values']['gateway']);
 }
@@ -116,44 +103,65 @@ function sms_user_settings_add_form_submit($form, &$form_state) {
  *   Number array (@todo or delta?)
  */
 function sms_user_settings_confirm_form(&$form_state, $account, $number) {
+  dsm('sms_user_settings_confirm_form');
+  // get and reset numbers list, return if none pending confirmation.
+  $numbers = sms_user_numbers($account, 'status', TRUE);
+  if (! count($numbers[SMS_USER_PENDING])) {
+    return;
+  }
+
   // force a reload of the numbers, if just changed gets new account
-  sms_user_load($account, 'mobile');
   $form_state['storage']['uid'] = $account->uid;
 
-  $form['confirm_number'] = array(
-    '#type' => 'item',
-    '#title' => t('Mobile phone number'),
-    '#value' => $number['number'],
-  );
-  $form['confirm_code[' . $number['number'] .']'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Confirmation code'),
-    '#description' => t('The code sent by SMS to your mobile phone.'),
-    '#size' => 4,
-    '#maxlength' => 4,
-  );
-  $form['confirm_submit[' . $number['number'] . ']'] = array(
-    '#type' => 'submit',
-    '#value' => t('Confirm'),
-  );
-  $form['confirm_delete'] = array(
-    '#type' => 'item',
-    '#value' => l('Delete', 'user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
-    '#access' => user_access('edit own sms number'),
-  );
+  foreach ($numbers[SMS_USER_PENDING] as $number) {
+    $form[$number['number']]['confirm_number[' . $number['number'] .']'] = array(
+      '#type' => 'item',
+      '#title' => t('Mobile phone number'),
+      '#value' => $number['number'],
+    );
+    $form[$number['number']]['confirm_code[' . $number['number'] .']'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Confirmation code'),
+      '#description' => t('The code sent by SMS to your mobile phone.'),
+      '#size' => 4,
+      '#maxlength' => 4,
+      '#parent' => $number['number'],
+    );
+    $form[$number['number']]['confirm_submit[' . $number['number'] . ']'] = array(
+      '#type' => 'submit',
+      '#value' => t('Confirm'),
+    );
+    $form[$number['number']]['confirm_delete[' . $number['number'] .']'] = array(
+      '#type' => 'item',
+      '#value' => l('Delete', 'user/' . $form_state['storage']['uid'] . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
+      '#access' => user_access('edit own sms number'),
+    );
+  }
+
   return $form;
 }
 
 function sms_user_settings_confirm_form_validate($form, &$form_state) {
+  dsm('sms_user_settings_confirm_form_validate');
+  dsm($form_state);
   $account = user_load(array('uid' => $form_state['storage']['uid']));
+  $filled = FALSE;
   foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
-    if (! empty($code) && ! sms_user_confirm($account, $number, $code, TRUE)) {
-      form_set_error('confirm_code', t('The confirmation code for number %number is invalid.', array('%number' => $number)));
+    if (! empty($code)) {
+      $filled = TRUE;
+      if (! sms_user_confirm($account, $number, $code, TRUE)) {
+        form_set_error('confirm_code[' . $number . ']', t('The confirmation code for number %number is invalid.', array('%number' => $number)));
+      }
     }
+  }
+  // @todo do we want this message, if so it might need attaching to something.
+  if (! $filled) {
+    form_set_error(NULL, t('To confirm a number you must enter the code sent by SMS to you mobile phone.'));
   }
 }
 
 function sms_user_settings_confirm_form_submit($form, &$form_state) {
+  dsm('sms_user_settings_confirm_form_submit');
   $account = user_load(array('uid' => $form_state['storage']['uid']));
   foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
    if (! empty($code)) {
@@ -166,16 +174,17 @@ function sms_user_settings_confirm_form_submit($form, &$form_state) {
  * Form: Lists confirmed number(s). For multiples allows setting active number.
  */
 function sms_user_settings_active_form(&$form_state, $account) {
-  // force a reload of the numbers, if just changed gets new account
-  sms_user_load($account, 'mobile');
+  dsm('sms_user_settings_active_form');
   $form_state['storage']['uid'] = $account->uid;
   $form = array();
 
-  $numbers = sms_user_numbers($account, 'number');
+  // we want to list numbers in a consistent order.
+  $numbers = sms_user_numbers($account, 'number', TRUE);
   ksort($numbers);
 
   foreach ($numbers as $number) {
     if ($number['status'] == SMS_USER_PENDING) {
+      // skip numbers that aren't confirmed.
       continue;
     }
     $row = array();
@@ -185,7 +194,7 @@ function sms_user_settings_active_form(&$form_state, $account) {
       '#value' => $number['number'],
       '#description' => t('Your mobile phone number has been confirmed.')
     );
-    if (variable_get('sms_user_multiple_numbers', TRUE)) {
+    if (variable_get('sms_user_multiple_numbers', FALSE)) {
       $options[$number['number']] = '';
       if ($number['status'] == SMS_USER_ACTIVE) {
         $active = $number['number'];
@@ -199,25 +208,26 @@ function sms_user_settings_active_form(&$form_state, $account) {
     $form[$number['number']] = $row;
   }
 
-  if (count($form)) {
-    if (variable_get('sms_user_multiple_numbers', TRUE)) {
-      $form['active'] = array(
-        '#type' => 'radios',
-        '#options' => $options,
-        '#default_value' => $active,
+  // if there is more than one number, add radio buttons to select the active one.
+  if (variable_get('sms_user_multiple_numbers', FALSE)) {
+    $form['active'] = array(
+      '#type' => 'radios',
+      '#options' => $options,
+      '#default_value' => $active,
+    );
+    if (count($options)) {
+      $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Set active'),
       );
     }
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Set active'),
-      '#validate' => array('sms_user_settings_active_form_validate'),
-      '#submit' => array('sms_user_settings_active_form_submit'),
-    );
   }
 
   return $form;
 }
+
 function sms_user_settings_active_form_submit($form, &$form_state) {
+  dsm('sms_user_settings_active_form_submit');
   sms_user_active_set($form_state['storage']['uid'], $form_state['values']['active']);
 }
 
@@ -227,12 +237,15 @@ function sms_user_settings_active_form_submit($form, &$form_state) {
 function sms_user_settings_delete_form(&$form_state, $account, $number) {
   $form_state['storage']['uid'] = $account->uid;
   $form_state['storage']['number'] = $number;
-
   $form = array();
-  $form['text'] = array('#value' => t('Are you sure you want to delete %number?', array('%number' => $number)));
-  $form['confirm'] = array('#type' => 'submit', '#value' => t('Delete'));
-  $form['cancel'] = array('#type' => 'submit', '#value' => t('Cancel'));
-  return $form;
+
+  return confirm_form($form,
+    t('Are you sure you want to delete mobile number %number?', array('%number' => $number)),
+    isset($_GET['destination']) ? $_GET['destination'] : 'user/'. $account->uid .'/edit/mobile',
+    NULL,
+    t('Delete'),
+    t('Cancel')
+  );
 }
 
 function sms_user_settings_delete_form_submit($form, &$form_state) {
@@ -251,7 +264,7 @@ function sms_user_settings_delete_form_submit($form, &$form_state) {
  *   Bool TRUE if should be in a fieldset.
  */
 function sms_user_settings_sleep_form(&$form_state, $account, $fieldset = FALSE) {
-  sms_user_load($account, 'mobile');
+  dsm('sms_user_settings_sleep_form');
   $form_state['storage']['uid'] = $account->uid;
 
   $form['sleep']['sleep_enabled'] = array(
@@ -305,7 +318,8 @@ function sms_user_settings_sleep_form(&$form_state, $account, $fieldset = FALSE)
 }
 
 function sms_user_settings_sleep_form_submit($form, &$form_state) {
-  $account = user_load(array('uid' => $form_state['values']['uid']));
+  dsm('sms_user_settings_sleep_form_submit');
+  $account = user_load(array('uid' => $form_state['storage']['uid']));
   $data = $account->sms_user;
   $data['sleep_enabled'] = $form_state['values']['sleep_enabled'];
   $data['sleep_start_time'] = $form_state['values']['sleep_start_time'];
@@ -313,6 +327,71 @@ function sms_user_settings_sleep_form_submit($form, &$form_state) {
   user_save($account, array('sms_user' => $data), 'mobile');
   drupal_set_message(t('The changes have been saved.'), 'status');
 }
+
+/********
+ * Theme Functions
+ */
+
+/**
+ * Theme function for combined user settings page.
+ *
+ * @param $content
+ *   array of forms: active, validate, add and sleep.
+ * @ingroup themeable
+ */
+function theme_sms_user_settings_page($content) {
+  $output = $content['active'];
+  $output .= $content['validate'];
+  $output .= $content['add']; 
+  $output .= $content['sleep'];
+  return $output;
+}
+
+/**
+ * Theme function for the confirm numbers form.
+ *
+ * @param $form
+ *   An associative array containing the structure of the form.
+ * @ingroup themeable
+ */
+function theme_sms_user_settings_confirm_form($form) {
+  $output = '';
+
+  if (variable_get('sms_user_multiple_numbers', FALSE)) {
+    $rows = array();
+
+    foreach (element_children($form) as $key) {
+      if (! isset($form[$key]['confirm_number[' . $key . ']'])) {
+        // just putting the numbers (and their selector) in a table
+        continue;
+      }
+
+      $number = $form[$key];
+      unset($form[$key]);
+
+      unset($number['confirm_code[' . $key . ']']['#title']);
+      unset($number['confirm_code[' . $key . ']']['#description']);
+
+      $row = array();
+      $row[] = $number['confirm_number[' . $key . ']']['#value'];
+      $row[] = drupal_render($number['confirm_code[' . $key . ']']);
+      $row[] = drupal_render($number['confirm_submit[' . $key . ']']);
+      $row[] = drupal_render($number['confirm_delete[' . $key . ']']);
+      $rows[] = $row;
+
+    }
+
+    if (count($rows)) {
+      $header = array(t('Mobile phone number'), t('Confirmation code'), '', '');
+      $output .= theme('table', $header, $rows);
+      $output .= t('The confirmation code sent by SMS to your mobile phone.');
+    }
+  }
+
+  $output .= drupal_render($form); 
+  return $output;
+}
+
 
 /**
  * Theme function for the active numbers form.
@@ -324,8 +403,9 @@ function sms_user_settings_sleep_form_submit($form, &$form_state) {
 function theme_sms_user_settings_active_form($form) {
   $output = '';
 
-  // @todo check non-multiple
-  if (variable_get('sms_user_multiple_numbers', TRUE)) {
+  if (variable_get('sms_user_multiple_numbers', FALSE)) {
+    $rows = array();
+
     foreach (element_children($form) as $key) {
       if (! isset($form[$key]['number'])) {
         // just putting the numbers (and their selector) in a table
@@ -341,8 +421,11 @@ function theme_sms_user_settings_active_form($form) {
       $rows[] = $row;
     }
 
-    $header = array(t('Number'), t('Active'), '');
-    $output .= theme('table', $header, $rows);
+    if (count($rows)) {
+      $header = array(t('Mobile phone number'), t('Active'), '');
+      $output .= theme('table', $header, $rows);
+      $output .= t('You can select the <em>active</em> number to receive SMS from the site. All numbers will be able to send SMS to the site.');
+    }
   }
 
   $output .= drupal_render($form); 
