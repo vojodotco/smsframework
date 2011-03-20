@@ -324,9 +324,9 @@ function sms_user_load(&$account, $category) {
     // using this for sleep settings, 
     // but trusting the {sms_user} table for numbers
     $user_data = unserialize($account->data);
-    $account->sms_user['sleep_enabled'] = $user_data['sms_user']['sleep_enabled'];
-    $account->sms_user['sleep_start_time'] = $user_data['sms_user']['sleep_start_time'];
-    $account->sms_user['sleep_end_time'] = $user_data['sms_user']['sleep_end_time'];
+    $account->sms_user['sleep_enabled'] = isset($user_data['sms_user']['sleep_enabled']) ? $user_data['sms_user']['sleep_enabled'] : FALSE;
+    $account->sms_user['sleep_start_time'] = isset($user_data['sms_user']['sleep_start_time']) ? $user_data['sms_user']['sleep_start_time'] : 0;
+    $account->sms_user['sleep_end_time'] = isset($user_data['sms_user']['sleep_end_time']) ? $user_data['sms_user']['sleep_end_time'] : 0;
   }
 
   $result = db_query("SELECT number, status, code, gateway FROM {sms_user} WHERE uid = %d", $account->uid);
