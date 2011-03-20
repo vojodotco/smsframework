@@ -315,6 +315,7 @@ function sms_user_user($op, &$edit, &$account, $category = NULL) {
  * @see sms_user_user()
  */
 function sms_user_load(&$account, $category) {
+  static $c = 0;
   // @todo this is called often.
   $result = db_query("SELECT number, status, code, gateway FROM {sms_user} WHERE uid = %d", $account->uid);
 
@@ -339,6 +340,7 @@ function sms_user_load(&$account, $category) {
       $account->sms_user[] = $data;
     }
   }
+  $account->sms_user['c'] = ++$c;
 }
 
 /**
