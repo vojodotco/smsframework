@@ -5,8 +5,6 @@
  *   SMS Framework user module. User settings, add, remove, verify numbers.
  */
 
-variable_set('sms_user_multiple_numbers', TRUE);
-
 /**
  * Form: User numbers overview.
  *

@@ -35,7 +35,7 @@ function sms_user_menu() {
     'description' => 'Edit options for SMS and user integration.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sms_user_admin_settings'),
-    'access arguments' => array('administer sms'),
+    'access arguments' => array('administer smsframework'),
     'file' => 'sms_user.admin.inc',
   );
 

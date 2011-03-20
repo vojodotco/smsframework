@@ -35,6 +35,13 @@ function sms_user_admin_settings() {
 
   $form['tokens']['content']['#value'] = theme('token_help', 'sms_user');
 
+  $form['sms_user_multiple_numbers'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable multiple mobile numbers'),
+    '#description' => t('If checked, users will be able to add more than one mobile number for their account. One can be set active for outgoing messages, all work for incoming.'),
+    '#default_value' => variable_get('sms_user_multiple_numbers', FALSE),
+  );
+
   $form['sms_user_sleep'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable sleep hours'),
