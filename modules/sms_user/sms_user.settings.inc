@@ -127,7 +127,7 @@ function sms_user_settings_confirm_form(&$form_state, $account, $number) {
     );
     $form[$number['number']]['confirm_delete[' . $number['number'] .']'] = array(
       '#type' => 'item',
-      '#value' => l('Delete', 'user/' . $account->uid . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
+      '#value' => l(t('Delete'), 'user/' . $account->uid . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
       '#access' => user_access('edit own sms number'),
     );
   }
@@ -138,7 +138,7 @@ function sms_user_settings_confirm_form(&$form_state, $account, $number) {
 function sms_user_settings_confirm_form_validate($form, &$form_state) {
   $account = user_load(array('uid' => $form_state['values']['uid']));
   $filled = FALSE;
-  foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
+  foreach ($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
     if (! empty($code)) {
       $filled = TRUE;
       if (! sms_user_confirm($account, $number, $code, TRUE)) {
@@ -154,7 +154,7 @@ function sms_user_settings_confirm_form_validate($form, &$form_state) {
 
 function sms_user_settings_confirm_form_submit($form, &$form_state) {
   $account = user_load(array('uid' => $form_state['values']['uid']));
-  foreach($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
+  foreach ($form_state['clicked_button']['#post']['confirm_code'] as $number => $code) {
    if (! empty($code)) {
      sms_user_confirm($account, $number, $code);
    }
@@ -192,7 +192,7 @@ function sms_user_settings_active_form(&$form_state, $account) {
     }
     $row['confirm_delete'] = array(
       '#type' => 'item',
-      '#value' => l('Delete', 'user/' . $account->uid . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
+      '#value' => l(t('Delete'), 'user/' . $account->uid . '/edit/mobile/' . $number['number'] . '/delete', array('query' => drupal_get_destination())),
       '#access' => user_access('edit own sms number'),
     );
     $form[$number['number']] = $row;
