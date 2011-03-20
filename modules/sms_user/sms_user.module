@@ -312,18 +312,24 @@ function sms_user_user($op, &$edit, &$account, $category = NULL) {
 /**
  * Load user mobile data into the user object.
  *
+ * @todo this is called often, the $account->sms_user content could be 
+ *   update and trusted?
  * @see sms_user_user()
  */
 function sms_user_load(&$account, $category) {
-  static $c = 0;
-  // @todo this is called often.
-  $result = db_query("SELECT number, status, code, gateway FROM {sms_user} WHERE uid = %d", $account->uid);
-
   $account->sms_user = array();
-  // @todo 
+
+  if (variable_get('sms_user_sleep', 1)) {
+    // all the sms_user data is stored in {users}.data 
+    // using this for sleep settings, 
+    // but trusting the {sms_user} table for numbers
     $user_data = unserialize($account->data);
-    $account->sms_user = $user_data['sms_user'];
-  // ----
+    $account->sms_user['sleep_enabled'] = $user_data['sms_user']['sleep_enabled'];
+    $account->sms_user['sleep_start_time'] = $user_data['sms_user']['sleep_start_time'];
+    $account->sms_user['sleep_end_time'] = $user_data['sms_user']['sleep_end_time'];
+  }
+
+  $result = db_query("SELECT number, status, code, gateway FROM {sms_user} WHERE uid = %d", $account->uid);
 
   while ($data = db_fetch_array($result)) {
     $data['gateway'] = unserialize($data['gateway']);
@@ -340,7 +346,6 @@ function sms_user_load(&$account, $category) {
       $account->sms_user[] = $data;
     }
   }
-  $account->sms_user['c'] = ++$c;
 }
 
 /**
@@ -359,12 +364,7 @@ function sms_user_save(&$edit, &$account, $category) {
       $result = drupal_write_record('sms_user', $number);
     }
 
-    // @todo: ---
-    $edit['sms_user']['number'] = NULL;
-    $edit['sms_user']['status'] = NULL;
-    $edit['sms_user']['code'] = NULL;
-    $edit['sms_user']['gateway'] = NULL;
-    $edit['sms_user']['uid'] = NULL;
+    $account->sms_user = $edit;
   }
 }
 
@@ -375,6 +375,8 @@ function sms_user_save(&$edit, &$account, $category) {
  *   The uid of the user who's data is to be removed.
  * @param $number
  *   The number to delete. Defaults to FALSE which will delete all numbers.
+ *
+ * Note: this doesn't delete from $account->sms_user that removed on re-load.
  *
  * @see sms_user_user()
  */
@@ -700,7 +702,6 @@ function sms_user_numbers($account, $index, $nocache = FALSE) {
 
   if ($nocache) {
     $numbers[$account->uid] = array();
-    sms_user_load($account);
   }
 
   if (! isset($numbers[$account->uid][$index])) {
@@ -732,6 +733,7 @@ function sms_user_views_api() {
  * Implements hook_usermerge_merge_users().
  *
  * Takes numbers from user to delete and adds them to user to keep.
+ * @todo sleep settings.
  */
 function sms_user_usermerge_merge_users($user_to_delete, $user_to_keep) {
   $numbers = db_query('SELECT * FROM {sms_user} WHERE uid = %d', $user_to_delete->uid);
