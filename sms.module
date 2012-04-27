@@ -497,6 +497,7 @@ function sms_sms_carriers() {
     'ideasclaro-ca.com' => t('Claro (Nicaragua)'),
     'mms.claro.com.uy' => t('Claro (Uruguay)'),
     'comcel.com.co' => t('Comcel'),
+    'waw.plspictures.com' => t('Credo'),
     'sms.mycricket.com' => t('Cricket'),
     'sms.ctimovil.com.ar' => t('CTI'),
     'emtelworld.net' => t('Emtel (Mauritius)'),
