@@ -510,6 +510,7 @@ function sms_sms_carriers() {
     'sms.mymeteor.ie' => t('Meteor (Ireland)'),
     'sms.spicenepal.com' => t('Mero Mobile (Nepal)'),
     'mymetropcs.com' => t('MetroPCS'),
+    'mms.metropcs.net' => t('MetroPCS'),
     'mobilinkworld.com' => t('Mobilink World'),
     'sms.mobitel.lk' => t('Mobitel (Sri Lanka)'),
     'movimensaje.com.ar' => t('Movicom'),
@@ -543,6 +544,8 @@ function sms_sms_carriers() {
     'vodafone-sms.de' => t('Vodafone Germany'),
     'sms.ycc.ru' => t('YCC'),
     'vmpix.com' => t('Virgin Mobile'),
+    'mms.elementmobile.net' => t('Element Mobile'),
+    'sms.elementmobile.net' => t('Element Mobile'),
   );
 }
 
