@@ -541,9 +541,10 @@ function sms_sms_carriers() {
     'vtext.com' => t('Verizon'),
     'vmobile.ca' => t('Virgin Mobile (Canada)'),
     'vmobl.com' => t('Virgin Mobile'),
+    'vmpix.com' => t('Virgin Mobile'),
+    'yrmobl.com' => t('Virgin Mobile'),
     'vodafone-sms.de' => t('Vodafone Germany'),
     'sms.ycc.ru' => t('YCC'),
-    'vmpix.com' => t('Virgin Mobile'),
     'mms.elementmobile.net' => t('Element Mobile'),
     'sms.elementmobile.net' => t('Element Mobile'),
   );
