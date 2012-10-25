@@ -488,6 +488,7 @@ function sms_sms_carriers() {
     'txt.att.net' => t('AT&T/Cingular'),
     'txt.bell.ca' => t('Bell Mobility (Canada)'),
     'myboostmobile.com' => t('Boost Mobile'),
+    'sms.myboostmobile.com' => t('Boost Mobile'),
     'mobile.celloneusa.com' => t('Cellular One (Dobson)'),
     'south1.com' => t('Cellular South'),
     'cwemail.com' => t('Centennial Wireless'),
