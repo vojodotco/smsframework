@@ -548,6 +548,8 @@ function sms_sms_carriers() {
     'sms.ycc.ru' => t('YCC'),
     'mms.elementmobile.net' => t('Element Mobile'),
     'sms.elementmobile.net' => t('Element Mobile'),
+    'vivomms.com.br' => t('Vivo (Brazil)'),
+    'tim.com.br' => t('Tim (Brazil)'),
   );
 }
 
