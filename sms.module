@@ -550,6 +550,8 @@ function sms_sms_carriers() {
     'sms.elementmobile.net' => t('Element Mobile'),
     'vivomms.com.br' => t('Vivo (Brazil)'),
     'tim.com.br' => t('Tim (Brazil)'),
+    'mms.oi.com.br' => t('Oi (Brazil)'),
+    'clarotorpedo.com.br' => t('Claro (Brazil)'),
   );
 }
 
