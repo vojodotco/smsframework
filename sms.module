@@ -418,7 +418,7 @@ function sms_carriers($domain = NULL) {
   }
 
   // Load overrideen carriers from database
-  $result = db_query("SELECT name, domain FROM {sms_carriers}");
+  $result = db_query("SELECT name, domain, prefix FROM {sms_carriers}");
 
   while ($carrier = db_fetch_array($result)) {
     if (in_array($carrier['domain'], array_keys($carriers))) {
@@ -431,6 +431,7 @@ function sms_carriers($domain = NULL) {
     $carriers[$carrier['domain']] = array(
       'name' => $carrier['name'],
       'type' => $type,
+      'prefix' => $carrier['prefix']
     );
   }
 

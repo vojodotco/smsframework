@@ -20,6 +20,7 @@ function sms_schema() {
     'fields' => array(
       'name'    => array('type' => 'varchar', 'not null' => TRUE, 'length' => 64),
       'domain'  => array('type' => 'varchar', 'not null' => TRUE, 'length' => 128),
+      'prefix'  => array('type' => 'varchar', 'not null' => TRUE, 'length' => 128),
     ),
     'primary key' => array('domain'),
   );
@@ -38,6 +39,17 @@ function sms_update_1() {
   db_add_primary_key($ret, 'sms_user', array('number'));
   db_add_index($ret, 'sms_user', 'uid', array('uid'));
   db_drop_field($ret, 'sms_user', 'delta');
+  return $ret;
+}
+
+/**
+ * Implements hook_update().
+ *
+ * Drop the now dead delta field, and change primary key to number.
+ */
+function sms_update_2() {
+  $ret = array();
+  db_add_field($ret, 'sms_carriers', 'prefix', array('type' => 'varchar', 'not null' => TRUE, 'length' => 128));
   return $ret;
 }
 

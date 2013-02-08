@@ -160,6 +160,10 @@ function sms_carriers_admin_form() {
       '#description' => $storage,
       '#default_value' => $carrier['status'],
     );
+    $form['prefix'][$css_safe_id] = array(
+      '#type' => 'markup',
+      '#value' => $carrier['prefix']
+    );
 
     $form['domain'][$css_safe_id] = array(
       '#type' => 'markup',
@@ -232,6 +236,12 @@ function sms_carriers_edit_form($form_state, $carrier = array()) {
     '#default_value' => $carrier['domain'],
     '#required' => TRUE,
   );
+  
+  $form['prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Prefix'),
+    '#default_value' => $carrier['prefix']
+  );
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -251,6 +261,7 @@ function sms_carriers_edit_form_submit(&$form, &$form_state) {
   $carrier = array(
     'name' => $form_state['values']['name'],
     'domain' => $form_state['values']['domain'],
+    'prefix' => $form_state['values']['prefix']
   );
   carrier_save($form_state['values']['carrier'], $carrier);
   drupal_set_message(t('The carrier has been saved.'));
@@ -304,7 +315,7 @@ function sms_carriers_delete_form_submit($form, &$form_state) {
 function theme_sms_carriers_admin_form($form) {
   $output = '';
 
-  $header = array('', t('Carrier'), t('Domain'), t('Actions'));
+  $header = array('', t('Carrier'), t('Domain'), t('Prefix'), t('Actions'));
 
   $rows = array();
   foreach (element_children($form['status']) as $element) {
@@ -319,6 +330,7 @@ function theme_sms_carriers_admin_form($form) {
       'status' => drupal_render($form['status'][$element]),
       'name' => $name,
       'domain' => drupal_render($form['domain'][$element]),
+      'prefix' => drupal_render($form['prefix'][$element]),
       'actions' =>  drupal_render($form['actions'][$element]),
     );
     $rows[] = $row;
