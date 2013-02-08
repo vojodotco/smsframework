@@ -589,7 +589,7 @@ function sms_format_number(&$number, $options = array()) {
  */
 function sms_formatter($number, $format = 1) {
   // Remove non-number characters
-  $number = preg_replace("/[^0-9]/", '', $number);
+  $number = preg_replace("/[^0-9\+]/", '', $number);
 
   /*
   @todo - the only length specification in the international numbering plan is that
@@ -611,6 +611,22 @@ function sms_formatter($number, $format = 1) {
   */
 
   return $number;
+}
+
+/**
+ * Returns a fully formed International Direct Dialing number, including the +.
+ * @param $email The phone's email address.
+ * @return A string containing the IDD number.
+ */
+function sms_get_idd_number($email) {
+  $from = explode('@', $email);
+  if (strlen($from) != 2) {
+    watchdog('sms', "Invalid email: $email");
+    return '';
+  }
+  $carrier = sms_carriers($from[1]);
+  $idd_number = sms_formatter($carrier['prefix'] . $from[0]);
+  return $idd_number;
 }
 
 /**
