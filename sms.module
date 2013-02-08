@@ -549,6 +549,7 @@ function sms_sms_carriers() {
     'vmobl.com' => array('name'=>t('Virgin Mobile'), 'prefix'=>'+1'),
     'vmpix.com' => array('name'=>t('Virgin Mobile'), 'prefix'=>'+1'),
     'yrmobl.com' => array('name'=>t('Virgin Mobile'), 'prefix'=>'+1'),
+    'pixmbl.com' => array('name'=>t('Virgin Mobile'), 'prefix'=>'+'),
     'vodafone-sms.de' => array('name'=>t('Vodafone Germany'), 'prefix'=>'+1'),
     'sms.ycc.ru' => array('name'=>t('YCC'), 'prefix'=>'+1'),
     'mms.elementmobile.net' => array('name'=>t('Element Mobile'), 'prefix'=>'+1'),
