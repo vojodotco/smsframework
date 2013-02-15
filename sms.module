@@ -620,7 +620,7 @@ function sms_formatter($number, $format = 1) {
  */
 function sms_get_idd_number($email) {
   $from = explode('@', $email);
-  if (strlen($from) != 2) {
+  if (count($from) != 2) {
     watchdog('sms', "Invalid email: $email");
     return '';
   }
