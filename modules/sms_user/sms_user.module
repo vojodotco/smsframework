@@ -135,7 +135,8 @@ function sms_user_send($uid, $message) {
  * Returns the uid of the owner of a number.
  */
 function sms_user_get_uid($number, $status = NULL) {
-  $sql = "SELECT uid FROM {sms_user} WHERE number = '%s'";
+  // Find numbers that match the end of $number (and are not empty)
+  $sql = "SELECT uid FROM {sms_user} WHERE '%s' LIKE concat('\%', `number`) AND `number` <> '' ";
   $arguments = array($number);
   if (isset($status)) {
     $sql .= " AND status = %d";
