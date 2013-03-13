@@ -136,8 +136,8 @@ function sms_user_send($uid, $message) {
  */
 function sms_user_get_uid($number, $status = NULL) {
   // Find numbers that match the end of $number (and are not empty)
-  $sql = "SELECT uid FROM {sms_user} WHERE '%s' LIKE concat('\%', `number`) AND `number` <> '' ";
-  $arguments = array($number);
+  $sql = "SELECT uid FROM {sms_user} WHERE (number LIKE '%%%s' OR '%s' LIKE CONCAT('%', number)) AND number <> '' ";
+  $arguments = array($number, $number);
   if (isset($status)) {
     $sql .= " AND status = %d";
     $arguments[] = $status;
