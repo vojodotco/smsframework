@@ -191,6 +191,13 @@ function sms_email_gateway_process_incoming_message($from, $to, $subject, $messa
  */
 function sms_email_gateway_send($number, $message, $options) {
   $from = !empty($options['from']) ? $options['from'] : NULL;
+  // Remove prefix from number if it exists
+  if (isset($options['carrier'])) {
+    $carrier = sms_carriers($options['carrier']);
+    if (strpos($number, $carrier['prefix']) === 0) {
+      $number = substr($number, strlen($carrier['prefix']));
+    }
+  }
   $to = $number .'@'. $options['carrier'];
   $params['message'] = $message;
   $message = drupal_mail('sms_email_gateway', 'sms', $to, language_default(), $params, $from);
