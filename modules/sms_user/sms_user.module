@@ -136,13 +136,19 @@ function sms_user_send($uid, $message) {
  */
 function sms_user_get_uid($number, $status = NULL) {
   // Find numbers that match the end of $number (and are not empty)
-  $sql = "SELECT uid FROM {sms_user} WHERE (number LIKE '%%%s' OR '%s' LIKE CONCAT('%', number)) AND number <> '' ";
+  $sql = "SELECT uid, number FROM {sms_user} WHERE (number LIKE '%%%s' OR '%s' LIKE CONCAT('%', number)) AND number <> '' ";
   $arguments = array($number, $number);
   if (isset($status)) {
     $sql .= " AND status = %d";
     $arguments[] = $status;
   }
   $data = db_fetch_array(db_query($sql, $arguments));
+  // If the number matches exactly, use it.  Otherwise make sure the number
+  // is at least 10 digits long before matching.
+  if (strlen($number) < 10 && $number != $data['number']) {
+    watchdog("Tried to get user for invalid phone number: $number");
+    return 0;
+  }
   return $data['uid'];
 }
 
