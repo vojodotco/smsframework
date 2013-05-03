@@ -536,7 +536,7 @@ function sms_sms_carriers() {
     'sms.sasktel.com' => array('name'=>t('Sasktel (Canada)'), 'prefix'=>'+1', 'receive'=>'1'),
     'mas.aw' => array('name'=>t('Setar Mobile email (Aruba)'), 'prefix'=>'+1', 'receive'=>'1'),
     'page.nextel.com' => array('name'=>t('Sprint (Nextel)'), 'prefix'=>'+1', 'receive'=>'1'),
-    'messaging.sprintpcs.com' => array('name'=>t('Sprint (PCS)'), 'prefix'=>'+1', 'receive'=>'1'),
+    'messaging.sprintpcs.com' => array('name'=>t('Sprint (PCS)'), 'prefix'=>'+1', 'receive'=>'0'),
     'tms.suncom.com' => array('name'=>t('Suncom'), 'prefix'=>'+1', 'receive'=>'1'),
     'tmomail.net' => array('name'=>t('T-Mobile'), 'prefix'=>'+1', 'receive'=>'1'),
     'sms.t-mobile.at' => array('name'=>t('T-Mobile (Austria)'), 'prefix'=>'+1', 'receive'=>'1'),
