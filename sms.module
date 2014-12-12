@@ -484,7 +484,7 @@ function carrier_save($domain, $edit) {
 }
 
 /**
- * Implements hookhp_sms_carriers()
+ * Implements hook_sms_carriers()
  */
 function sms_sms_carriers() {
   return array(
