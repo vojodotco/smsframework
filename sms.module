@@ -484,7 +484,7 @@ function carrier_save($domain, $edit) {
 }
 
 /**
- * Implements hook_sms_carriers()
+ * Implements hookhp_sms_carriers()
  */
 function sms_sms_carriers() {
   return array(
@@ -559,6 +559,7 @@ function sms_sms_carriers() {
     'vivomms.com.br' => array('name'=>t('Vivo (Brazil)'), 'prefix'=>'+1', 'receive'=>'1'),
     'tim.com.br' => array('name'=>t('Tim (Brazil)'), 'prefix'=>'+1', 'receive'=>'1'),
     'mms.oi.com.br' => array('name'=>t('Oi (Brazil)'), 'prefix'=>'+1', 'receive'=>'1'),
+    'rek2.com.mx' => array('name'=>t('Iusacell (Mexico)'), 'prefix'=>'+1', 'receive'=>'1'),	
     'clarotorpedo.com.br' => array('name'=>t('Claro (Brazil)'), 'prefix'=>'+1', 'receive'=>'1'),
   );
 }
